@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Mark as unread",
+    "description": "Adds a Mark as unread row to every Session \"...\" menu and keeps the unread dots after a restart."
+  }
+}
