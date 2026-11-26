@@ -1,8 +1,14 @@
 /**
  * Client half of the mark-unread bundle.
  *
- * Two contributions, both on shipped Slot seats the sidebar browser declares:
- *   - `sidebar.workspaces.session.menu.item` (order 150): the 标为未读 / 标为已读 row.
+ * Three contributions on shipped Slot seats the sidebar browser declares:
+ *   - `sidebar.workspaces.session.row.action` (order 50): the exposed hover
+ *     button that sits beside the shipped `archive` (100) and `pin` (200) row
+ *     actions, before them. This is the primary control — marking is a frequent
+ *     action, so it lives one level above the `...` menu.
+ *   - `sidebar.workspaces.session.menu.item` (order 150): the 标为未读 / 标为已读
+ *     row. Kept for parity with `pin` and `archive`, which are registered on
+ *     both seats; the menu is where a labelled version of the action belongs.
  *   - `sidebar.session.row.leading`: the unread dot in the row's 16px leading cell.
  *
  * The dot mirrors the shipped completion dot: same 10px box with a 6px core,
@@ -26,6 +32,7 @@ window.__ModuleLoader__.load({
     const ENDPOINT = '/_dsh/mark-unread'
     const SENTINEL = 'x-dsh-mark-unread'
 
+    /** Shared geometry for both exposed controls. */
     const STYLES = `
 .dsh-mu-row {
   display: flex;
@@ -66,6 +73,31 @@ window.__ModuleLoader__.load({
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Row hover strip: the button beside the shipped archive / pin actions. */
+.dsh-mu-action {
+  display: inline-flex;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: var(--dsw-radius-sm, 4px);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary, inherit);
+  cursor: pointer;
+}
+.dsh-mu-action:hover,
+.dsh-mu-action:focus-visible {
+  background: var(--dsw-alias-interactive-bg-hover, var(--dsw-alias-bg-layer-2));
+  color: var(--dsw-alias-label-primary, inherit);
+  outline: none;
+}
+.dsh-mu-action[data-marked='true'] {
+  color: var(--dsw-alias-state-success-primary);
+}
+.dsh-mu-action svg { width: 14px; height: 14px; }
 .dsh-mu-cell {
   display: inline-flex;
   flex: none;
@@ -204,6 +236,38 @@ window.__ModuleLoader__.load({
     }
 
     // ----------------------------------------------------------- components ---
+    /**
+     * The exposed row button, in the hover strip beside `archive` and `pin`.
+     *
+     * The seat hands over the row it belongs to and owns the click plumbing
+     * (a click inside the strip never opens the row), so this component only
+     * performs the toggle. When the row is unread the glyph turns green and a
+     * second click clears the mark by hand.
+     */
+    function MarkUnreadRowAction(props) {
+      const { sessionId, t, useSessionRetainInfo } = props
+      const marked = useMark(sessionId)
+      const openNow = useSessionRetainInfo(sessionId, mainViewOpen)
+      if (typeof sessionId !== 'string') return null
+      const label = typeof t === 'function' ? t(marked ? 'row.markRead' : 'row.markUnread') : ''
+      return h(
+        'button',
+        {
+          type: 'button',
+          className: 'dsh-mu-action',
+          'data-marked': marked ? 'true' : 'false',
+          'aria-pressed': marked ? 'true' : 'false',
+          'aria-label': label,
+          title: label,
+          onClick: () => {
+            if (marked) clearUnread(sessionId)
+            else markUnread(sessionId, openNow === true)
+          },
+        },
+        marked ? readIcon() : unreadIcon(),
+      )
+    }
+
     /** The `...` menu row: one `role="menuitem"` button joining the shipped rows. */
     function MarkUnreadMenuRow(props) {
       const { sessionId, t, useMenuOpenState, useSessionRetainInfo } = props
@@ -281,8 +345,26 @@ window.__ModuleLoader__.load({
         ctx.effect(
           () => {
             const dictionaries = [
-              ['zh', { 'menu.markUnread': '标为未读', 'menu.markRead': '标为已读', 'row.unread': '未读' }],
-              ['en', { 'menu.markUnread': 'Mark as unread', 'menu.markRead': 'Mark as read', 'row.unread': 'Unread' }],
+              [
+                'zh',
+                {
+                  'menu.markUnread': '标为未读',
+                  'menu.markRead': '标为已读',
+                  'row.markUnread': '标为未读',
+                  'row.markRead': '标为已读',
+                  'row.unread': '未读',
+                },
+              ],
+              [
+                'en',
+                {
+                  'menu.markUnread': 'Mark as unread',
+                  'menu.markRead': 'Mark as read',
+                  'row.markUnread': 'Mark as unread',
+                  'row.markRead': 'Mark as read',
+                  'row.unread': 'Unread',
+                },
+              ],
             ]
             const disposers = []
             for (const [locale, dict] of dictionaries) {
@@ -301,6 +383,19 @@ window.__ModuleLoader__.load({
         )
 
         void load()
+
+        // Primary control: the exposed hover button, ahead of archive (100) and pin (200).
+        ctx.slots.inject('sidebar.workspaces.session.row.action', () =>
+          ctx.slots.register(
+            {
+              name: 'sidebar.workspaces.session.row.action',
+              id: 'mark-unread:row',
+              order: 50,
+              locale: NS,
+            },
+            MarkUnreadRowAction,
+          ),
+        )
 
         ctx.slots.inject('sidebar.workspaces.session.menu.item', () =>
           ctx.slots.register(

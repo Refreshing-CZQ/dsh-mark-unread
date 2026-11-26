@@ -1,7 +1,7 @@
 {
   "name": "dsh-mark-unread",
-  "version": "1.1.0",
-  "description": "Adds a Mark as unread row to every Session menu in DeepSeek Harness, with a dot that clears itself once the Session is opened.",
+  "version": "1.2.0",
+  "description": "Adds a Mark as unread hover button to every Session row in DeepSeek Harness, beside Pin and Archive, with a dot that clears itself once the Session is opened.",
   "type": "module",
   "license": "MIT",
   "author": "Refreshing-CZQ",

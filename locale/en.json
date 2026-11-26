@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Mark as unread",
-    "description": "Adds a Mark as unread row to every Session \"...\" menu and keeps the unread dots after a restart."
+    "description": "Adds a Mark as unread hover button beside Pin and Archive on every Session row, plus an unread dot that survives a restart."
   }
 }
