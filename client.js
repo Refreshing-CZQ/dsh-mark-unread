@@ -268,6 +268,19 @@ window.__ModuleLoader__.load({
       )
     }
 
+    /**
+     * Replaces the shipped `archive` button in the row's hover strip with nothing.
+     *
+     * Archive is destructive-ish from the row's perspective: one stray click and the
+     * Session leaves the list, which is hard to find again. It stays available in the
+     * `...` menu, so the seat is shadowed rather than the action removed. Reusing the
+     * shipped id puts this entry in that cell; the seat treats a null render as
+     * "this action does not apply to the row" and renders no button.
+     */
+    function HiddenArchiveRowAction() {
+      return null
+    }
+
     /** The `...` menu row: one `role="menuitem"` button joining the shipped rows. */
     function MarkUnreadMenuRow(props) {
       const { sessionId, t, useMenuOpenState, useSessionRetainInfo } = props
@@ -394,6 +407,20 @@ window.__ModuleLoader__.load({
               locale: NS,
             },
             MarkUnreadRowAction,
+          ),
+        )
+
+        // Keep only pin and mark-unread exposed: archive stays in the `...` menu, where a
+        // stray click cannot retire a Session by accident.
+        ctx.slots.inject('sidebar.workspaces.session.row.action', () =>
+          ctx.slots.register(
+            {
+              name: 'sidebar.workspaces.session.row.action',
+              id: 'archive',
+              order: 100,
+              locale: NS,
+            },
+            HiddenArchiveRowAction,
           ),
         )
 
